@@ -76,7 +76,7 @@ parser$add_argument("-o", "--output",
 parser$add_argument("--fasta", action='store_true', help="Write ASV sequences separately into fasta file")
 parser$add_argument("-snv", "--snv_filter", 
                     help="Path to file for filtering ASVs based on edit distance")
-parser$add_argument("--indel_filter", default='0.90', 
+parser$add_argument("--indel_filter", 
                     help="Specify proportion of ASV length (between 0 and 1) to target length for filtering based on indels")
 parser$add_argument("--strain", default="3D7", help="Name of Specific strain to map to. Defaults to 3D7")
 parser$add_argument("--strain2", help="Name of second strain if mapping to 2 different strains")
@@ -187,27 +187,37 @@ if (!is.null(args$snv_filter)) {
 }
 
 if (!is.null(args$indel_filter)) {
-  ind <- as.numeric(args$indel_filter)
-} else {
-  print("INDEL based filter threshold not given. Using default proportion of +-90%..")
-  ind <- 0.90
-}
-
-asvdf$indel_filter <- NA
-refseq <- toupper(sapply(read.fasta(path_to_refseq[1]),c2s))
-for (i in 1:nrow(asvdf)) {
-  haplen <- nchar(as.character(seqs_df$sequence[i]))
-  refid <- asvdf[i,paste0("refid_",strains[1])]
-  tarlen <- nchar(refseq[refid])
-  lprop <- (haplen/tarlen)
-  if (lprop < ind | lprop > (1/ind)) {
-    ifil <- "FAIL"
+  if (file.exists(args$indel_filter)) {
+    Indelcutoff <- fread(args$indel_filter)
   } else {
-    ifil <- "PASS"
+    Indelcutoff <- as.numeric(args$indel_filter)
   }
-  asvdf$indel_filter[i] <- ifil
+  if (is.na(Indelcutoff)) {
+    warning("INDEL based filter threshold argument not valid. Using default proportion of +-90%..")
+    Indelcutoff <- 0.90
+  }
+  asvdf$indel_filter <- NA
+  refseq <- toupper(sapply(read.fasta(path_to_refseq[1]),c2s))
+  for (i in 1:nrow(asvdf)) {
+    haplen <- nchar(as.character(seqs_df$sequence[i]))
+    refid <- asvdf[i,paste0("refid_",strains[1])]
+    if (length(Indelcutoff) != 1) {
+      ind <- Indelcutoff[c(Indelcutoff[,1] == refid),2]
+    } else {
+      ind <- Indelcutoff
+    }
+    tarlen <- nchar(refseq[refid])
+    lprop <- (haplen/tarlen)
+    if (lprop < ind | lprop > (1/ind)) {
+      ifil <- "FAIL"
+    } else {
+      ifil <- "PASS"
+    }
+    asvdf$indel_filter[i] <- ifil
+  }
+} else {
+  print("INDEL based filter threshold not given. Skipping length filtering..")
 }
-
 
 if (!is.null(args$bimera)) {
   if (file.exists(args$bimera)) {
