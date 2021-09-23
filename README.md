@@ -9,7 +9,11 @@ Follow your Operating System specific instructions on how to install Anaconda3
 ### Create conda environment for running the tool
 Use the ```environment.yml``` file to create a conda virtual environment
 ```
-conda env create --file environment.yml -p /path/to/env/ampseq/
+conda env create --file environment.yml -p /path/to/env/<name-of-environment>/
+```
+To activate the conda environment
+```
+source activate <name-of-environment>
 ```
 A detail description on creating a conda environment is given here: 
 https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
