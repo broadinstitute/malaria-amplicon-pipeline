@@ -49,7 +49,7 @@ optional arguments:
 
 **_NOTE_** : _It is highly recommended to create the fastq metafile in the working directory of the new run. By default the pipeline considers the parent directory of the metafile as the standard working directory and keep the analysis organized. Successive files and directories are written into the working directory._
 
-### Run the tool
+## Run the tool
 If using the JSON input file, the main script can be initiated as given
 ```
 python AmpliconPipeline.py --json inputs.json
