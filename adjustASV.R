@@ -110,9 +110,33 @@ write.table(df, file = args$output, sep = "\t", quote = FALSE, row.names = FALSE
 seqfile_corrected <- paste0(dirname(seqfile),"/seqtab_corrected.tsv")
 
 # NOTE: Duplicated ASVs do not have read support merged 
-colnames(seqtab) <- as.character(df$correctedASV)
+
+correctedASV_vec <- as.character(df$correctedASV)
+colnames(seqtab) <- correctedASV_vec
+
+duplicated_sequences <- correctedASV_vec[duplicated(correctedASV_vec)]
+
+for (seq in duplicated_sequences){
+  
+  # Boolean vector of matching columns in seqtab
+  # correctedASV_vec == seq 
+  
+  # Generated summed column
+  summedColumn <- rowSums(seqtab[,correctedASV_vec == seq])
+  
+  # Remove duplicated columns 
+  temp_seqtab <- data.frame(seqtab[,!(correctedASV_vec == seq)])
+  
+  # Add column back to table
+  temp_seqtab[,seq] <- summedColumn
+  filt_seqtab <- temp_seqtab
+  
+}
+
 filt_seqtab <- seqtab[,!is.na(colnames(seqtab))]
-filt_seqtab <- filt_seqtab[,!duplicated(colnames(filt_seqtab))]
+
+# Should be redundant after looping 
+#filt_seqtab <- filt_seqtab[,!duplicated(colnames(filt_seqtab))]
 
 write.table(filt_seqtab, file = seqfile_corrected, sep = "\t", quote = FALSE, row.names = TRUE)
 
