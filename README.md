@@ -188,6 +188,6 @@ optional arguments:
   -v, --verbose     	Increase verbosity
 ```
 
-&copy; 2021 Broad Institute
+&copy; 2022 Broad Institute, Genomic Center for Infectious Diseases
 
 
