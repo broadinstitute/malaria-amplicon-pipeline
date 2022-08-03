@@ -50,10 +50,13 @@ def trim_primer(sampleid,fileF,fileR,pr1,pr2,prefix,keep_untrim=False):
 	return()
 
 def merge_seqtab(path_op,path_nop):
+<<<<<<< HEAD
 
 	print('path_op',path_op)
 	print('path_nop',path_nop)
 
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 	if os.path.isfile(path_op) and os.path.isfile(path_nop):
 		seqtab_op = pandas.read_csv(path_op, sep = "\t")
 		seqtab_nop = pandas.read_csv(path_nop, sep = "\t")
@@ -67,7 +70,10 @@ def main():
 	global run_dir
 	global path
 	path = os.path.dirname(__file__)
+<<<<<<< HEAD
 	print('path',path) 
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--json', help="Path to json inputs")
@@ -92,6 +98,7 @@ def main():
 	parser.add_argument('--overlap_pr1', help="Path to forward primers for shorter overlapping targets FASTA file (For iseq run only)")
 	parser.add_argument('--overlap_pr2', help="Path to reverse primers for shorter overlapping targets FASTA file (For iseq run only)")
 
+<<<<<<< HEAD
 	# Converting args parser for compatibility with JSON
 	args = parser.parse_args()
 	argparse_dict = vars(args)
@@ -114,6 +121,23 @@ def main():
 
 	if argparse_dict['path_to_meta'] is not None:
 		path_to_meta = argparse_dict['path_to_meta']
+=======
+	args = parser.parse_args()
+	if args.json is None:
+		print('NOTE : JSON input file not provided. Checking for individual arguments')
+	elif os.path.isfile(args.json):
+		jsonfile = open(args.json,'r')
+		jsoninputs = json.load(jsonfile)
+		jsonfile.close()
+	else:
+		print('NOTE : JSON input file provided but not found. Using individual arguments')
+
+	if args.path_to_meta is not None:
+		print('NOTE : --path_to_meta argument found. This overrides any json input provided')
+		path_to_meta = args.path_to_meta
+	elif args.json is not None:
+		path_to_meta = jsoninputs['path_to_meta']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 	else:
 		sys.exit('Execution halted : JSON inputs not provided and --path_to_meta not found! Exiting..')
 
@@ -126,7 +150,11 @@ def main():
 
 #### Adapter removal steps ####
 
+<<<<<<< HEAD
 	if argparse_dict['skip_preprocess']:
+=======
+	if args.skip_preprocess:
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		print("skipping Preprocess step..")
 		pass
 	else:
@@ -151,6 +179,7 @@ def main():
 
 #### Primer removal steps ####
 
+<<<<<<< HEAD
 	if argparse_dict['keep_primers']:
 		print("skipping Primer removal step..")
 		pass
@@ -158,14 +187,35 @@ def main():
 		if argparse_dict['pr1'] is not None:
 			print('NOTE : --pr1 argument found. This overrides any json input provided')
 			pr1 = argparse_dict['pr1']
+=======
+	if args.keep_primers:
+		print("skipping Primer removal step..")
+		pass
+	else:
+		if args.pr1 is not None:
+			print('NOTE : --pr1 argument found. This overrides any json input provided')
+			pr1 = args.pr1
+			mark = True
+		elif args.json is not None:
+			pr1 = jsoninputs['pr1']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			mark = True
 		else:
 			print('NOTE : JSON inputs not provided and --pr1 argument not found. Skipping primer removal..')
 			mark = False
 
+<<<<<<< HEAD
 		if argparse_dict['pr2'] is not None:
 			print('NOTE : --pr2 argument found. This overrides any json input provided')
 			pr2 = argparse_dict['pr2']
+=======
+		if args.pr2 is not None:
+			print('NOTE : --pr2 argument found. This overrides any json input provided')
+			pr2 = args.pr2
+			mark = True
+		elif args.json is not None:
+			pr2 = jsoninputs['pr2']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			mark = True
 		else:
 			print('NOTE : JSON inputs not provided and --pr2 argument not found. Skipping primer removal..')
@@ -180,6 +230,7 @@ def main():
 			
 			meta = open(path_to_meta,'r')
 			samples = meta.readlines()
+<<<<<<< HEAD
 			if argparse_dict['iseq']:
 				if argparse_dict['overlap_pr1'] is not None:
 					print('NOTE : --overlap_pr1 argument found. This overrides any json input provided')
@@ -190,6 +241,22 @@ def main():
 				if argparse_dict['overlap_pr2'] is not None:
 					print('NOTE : --overlap_pr2 argument found. This overrides any json input provided')
 					overlap_pr2 = argparse_dict['overlap_pr2']
+=======
+			if args.iseq:
+				if args.overlap_pr1 is not None:
+					print('NOTE : --overlap_pr1 argument found. This overrides any json input provided')
+					overlap_pr1 = args.overlap_pr1
+				elif args.json is not None:
+					overlap_pr1 = jsoninputs['overlap_pr1']
+				else:
+					sys.exit('Execution halted: iseq flag set and overlapping Fwd primer not found')
+
+				if args.overlap_pr2 is not None:
+					print('NOTE : --overlap_pr2 argument found. This overrides any json input provided')
+					overlap_pr2 = args.overlap_pr2
+				elif args.json is not None:
+					overlap_pr2 = jsoninputs['overlap_pr2']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 				else:
 					sys.exit('Execution halted: iseq flag set and overlapping Rev primer not found')
 
@@ -200,7 +267,10 @@ def main():
 					p.apply_async(trim_primer, args=(slist[0],slist[1],slist[2],overlap_pr1,overlap_pr2,"iseq_op",True))
 				p.close()
 				p.join()
+<<<<<<< HEAD
 				
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 				# Metafile for trimmed overlapping target reads
 				create_meta(os.path.join(run_dir,"prim_fq"),os.path.join(run_dir,"iseq_op_prim_meta.txt"),
 					pattern_fw="*_iseq_op_1.fq.gz", pattern_rv="*_iseq_op_2.fq.gz")
@@ -209,7 +279,10 @@ def main():
 					pattern_fw="*_temp_1.fq.gz", pattern_rv="*_temp_2.fq.gz")
 				temp_meta = open(os.path.join(run_dir,"iseq_temp_meta.txt"),'r')
 				samples = temp_meta.readlines()
+<<<<<<< HEAD
 
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 				# Trim primers off second subset of non-op long targets 
 				p = multiprocessing.Pool()
 				for sample in samples:
@@ -221,7 +294,11 @@ def main():
 				create_meta(os.path.join(run_dir,"prim_fq"),os.path.join(run_dir,"iseq_nop_prim_meta.txt"),
 					pattern_fw="*_iseq_nop_1.fq.gz", pattern_rv="*_iseq_nop_2.fq.gz")
 				temp_meta.close()
+<<<<<<< HEAD
 			elif argparse_dict['demux_by_amp']:
+=======
+			elif args.demux_by_amp:
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 				p = multiprocessing.Pool()
 				for sample in samples:
 					slist = sample.split()
@@ -241,6 +318,7 @@ def main():
 				path_to_meta = os.path.join(run_dir,"prim_meta.txt")
 			meta.close()
 
+<<<<<<< HEAD
 
 	print("Done with primer removal")
 
@@ -259,72 +337,161 @@ def main():
 		if argparse_dict['maxEE'] is not None:
 			#print('NOTE : --maxEE argument found. This overrides any json input provided')
 			maxEE = argparse_dict['maxEE']
+=======
+#### DADA2 Steps ####
+
+	if args.skip_dada2:
+		print("Skipping dada2 processing..")
+		pass
+	else:
+		if args.Class is not None:
+			print('NOTE : --Class argument found. This overrides any json input provided')
+			Class = args.Class
+		elif args.json is not None:
+			Class = jsoninputs['Class']
+		else:
+			sys.exit('Execution halted : JSON inputs not provided and --Class not found! Exiting..')
+
+		if args.maxEE is not None:
+			print('NOTE : --maxEE argument found. This overrides any json input provided')
+			maxEE = args.maxEE
+		elif args.json is not None:
+			maxEE = jsoninputs['maxEE']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			maxEE = ''
 			print('NOTE : JSON inputs not provided and --maxEE argument not found. Default will be used depending on the Class')
 
+<<<<<<< HEAD
 		if argparse_dict['trimRight'] is not None:
 			#print('NOTE : --trimRight argument found. This overrides any json input provided')
 			trimRight = argparse_dict['trimRight']
+=======
+		if args.trimRight is not None:
+			print('NOTE : --trimRight argument found. This overrides any json input provided')
+			trimRight = args.trimRight
+		elif args.json is not None:
+			trimRight = jsoninputs['trimRight']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			trimRight = ''
 			print('NOTE : JSON inputs not provided and --trimRight argument not found. Default will be used depending on the Class')
 
+<<<<<<< HEAD
 		if argparse_dict['minLen'] is not None:
 			minLen = argparse_dict['minLen']
+=======
+		if args.minLen is not None:
+			print('NOTE : --minLen argument found. This overrides any json input provided')
+			minLen = args.minLen
+		elif args.json is not None:
+			minLen = jsoninputs['minLen']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			minLen = ''
 			print('NOTE : JSON inputs not provided and --minLen argument not found. Default will be used depending on the Class')
 
+<<<<<<< HEAD
 		if argparse_dict['truncQ'] is not None:
 			truncQ = argparse_dict['truncQ']
+=======
+		if args.truncQ is not None:
+			print('NOTE : --truncQ argument found. This overrides any json input provided')
+			truncQ = args.truncQ
+		elif args.json is not None:
+			truncQ = jsoninputs['truncQ']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			truncQ = ''
 			print('NOTE : JSON inputs not provided and --truncQ argument not found. Default will be used depending on the Class')
 
+<<<<<<< HEAD
 		if argparse_dict['max_consist'] is not None:
 			max_consist = argparse_dict['max_consist']
+=======
+		if args.max_consist is not None:
+			print('NOTE : --max_consist argument found. This overrides any json input provided')
+			max_consist = args.max_consist
+		elif args.json is not None:
+			max_consist = jsoninputs['max_consist']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			max_consist = ''
 			print('NOTE : JSON inputs not provided and --max_consist argument not found. Default will be used depending on the Class')
 
+<<<<<<< HEAD
 		if argparse_dict['omegaA'] is not None:
 			omegaA = argparse_dict['omegaA']
+=======
+		if args.omegaA is not None:
+			print('NOTE : --omegaA argument found. This overrides any json input provided')
+			omegaA = args.omegaA
+		elif args.json is not None:
+			omegaA = jsoninputs['omegaA']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			omegaA = ''
 			print('NOTE : JSON inputs not provided and --omegaA argument not found. Default will be used depending on Class')
 
+<<<<<<< HEAD
 		if argparse_dict['saveRdata'] is not None:
 			saveRdata = argparse_dict['saveRdata']
+=======
+		if args.saveRdata is not None:
+			print('NOTE : --saveRdata argument found. This overrides any json input provided')
+			saveRdata = args.saveRdata
+		elif args.json is not None:
+			saveRdata = jsoninputs['saveRdata']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			saveRdata = ''
 			print('NOTE : JSON inputs not provided and --saveRdata argument not found. By Default, DADA2 run is not saved as an Rdata object')
 
+<<<<<<< HEAD
 		if argparse_dict['iseq']:
 			print('NOTE : with --iseq enabled, --justConcatenate is irrelevant and ignored')
 		elif argparse_dict['justConcatenate'] is not None:
 			justConcatenate = argparse_dict['justConcatenate']
+=======
+		if args.iseq:
+			print('NOTE : with --iseq enabled, --justConcatenate is irrelavant and ignored')
+		elif args.justConcatenate is not None:
+			print('NOTE : --justConcatenate argument found. This overrides any json input provided')
+			justConcatenate = args.justConcatenate
+		elif args.json is not None:
+			justConcatenate = jsoninputs['justConcatenate']
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		else:
 			justConcatenate = ''
 			print('NOTE : JSON inputs not provided and --justConcatenate argument not found. Default will be used depending on Class')
 
 		print("Now running DADA2..")
+<<<<<<< HEAD
 
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 		if not os.path.exists(os.path.join(run_dir,"run_dada2")):
 			os.mkdir(os.path.join(run_dir,"run_dada2"))
 		else:
 			print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2")))
 
 		## Check for short iseq reads option
+<<<<<<< HEAD
 
 		if argparse_dict['iseq']:
+=======
+		if args.iseq:
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			
 			if not os.path.exists(os.path.join(run_dir,"run_dada2","dada2_op")):
 				os.mkdir(os.path.join(run_dir,"run_dada2","dada2_op"))
 			else:
 				print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2","dada2_op")))
 
+<<<<<<< HEAD
 			print("Running DADA2 on op targets")
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			# Run DADA2 on op targets
 			cmdOp = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', os.path.join(run_dir,"iseq_op_prim_meta.txt"),
 			'-d', os.path.join(run_dir,'run_dada2','dada2_op'),
@@ -340,7 +507,10 @@ def main():
 			else:
 				print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2","dada2_nop")))
 
+<<<<<<< HEAD
 			print("Running DADA2 on non-op targets")
+=======
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			# Run DADA2 on non-op targets
 			cmdNOp = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', os.path.join(run_dir,"iseq_nop_prim_meta.txt"),
 			'-d', os.path.join(run_dir,'run_dada2','dada2_nop'),
@@ -351,6 +521,7 @@ def main():
 
 			# ASV modification block for non-op targets
 			seqtab_nop = os.path.join(run_dir,'run_dada2','dada2_nop','seqtab_nop.tsv')
+<<<<<<< HEAD
 			if argparse_dict['reference'] is not None:
 
 				print('--reference given %s' % (str(argparse_dict['reference'])))
@@ -358,6 +529,13 @@ def main():
 					adjASV = ['Rscript', os.path.join(path, 'adjustASV.R'), '-s', seqtab_nop, '-ref', str(argparse_dict['reference']),
 					'-o', os.path.join(run_dir,'run_dada2','dada2_nop','correctedASV.txt')]
 
+=======
+			if args.reference is not None:
+				print('--reference given %s' % (str(args.reference)))
+				if os.path.isfile(args.reference):
+					adjASV = ['Rscript', os.path.join(path, 'adjustASV.R'), '-s', seqtab_nop, '-ref', str(args.reference),
+					'-o', os.path.join(run_dir,'run_dada2','dada2_nop','correctedASV.txt')]
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 					procASV = subprocess.Popen(adjASV, stdout=sys.stdout, stderr=sys.stderr)
 					procASV.wait()
 					seqtab_corrected = os.path.join(run_dir,'run_dada2','dada2_nop','seqtab_corrected.tsv')
@@ -373,7 +551,11 @@ def main():
 			seqtab.to_csv(os.path.join(run_dir,'run_dada2','seqtab_iseq.tsv'), sep = "\t")
 
 		## Check for demux by amplicon option
+<<<<<<< HEAD
 		elif argparse_dict['demux_by_amp']:
+=======
+		elif args.demux_by_amp:
+>>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 			# Loop DADA2 over amplicons
 			n = 0
 			amplist = open(pr1,'r').readlines()
