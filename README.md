@@ -1,7 +1,11 @@
 # malaria-amplicon-pipeline
 Contact in case of issues running the tool:  
+
 Ruchit Panchal  
 rpanchal@broadinstitute.org
+
+Jason Travis Mohabir
+jmohabir@broadinstitute.org
 
 ## Pre-Requisites
 ### Install Anaconda3
