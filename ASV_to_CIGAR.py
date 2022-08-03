@@ -10,11 +10,7 @@ import re
 from Bio import SeqIO, AlignIO
 
 # default location of amplicon sequences and DUST mask info for the gt-seq panel
-<<<<<<< HEAD
 AMPLICON_DATABASE="/gsap/garage-protistvector/jmohabir/Amplicon2CIGAR_Pipeline/pf3d7_ref_updated_v3.fasta"
-=======
-AMPLICON_DATABASE="/gsap/garage-protistvector/ampseq_data/AmpSeQC/amplicons_noprimers.fasta"
->>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 
 verbose = False # set to true to report more messages
 
@@ -75,12 +71,8 @@ def parse_asv_table(file, min_reads=0, min_samples=0, max_snv_dist=-1, max_indel
             if exclude_bimeras and line[-1] == "TRUE":
                 continue # skip if dada2 called bimera
             ASV = line[0] # (e.g. ASV123)
-<<<<<<< HEAD
             amplicon = line[5] # target gene/amplicon
 
-=======
-            amplicon = line[4] # target gene/amplicon
->>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
             if amplicon not in bins:
                 bins[amplicon] = []
             bins[amplicon].append(ASV)
@@ -99,12 +91,9 @@ def wrte_amplicon_fastas(asvs, bins, amplicons, outdir="ASVs"):
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
     
-<<<<<<< HEAD
     print('bins:',bins)
     print('amplicons',amplicons.keys())
 
-=======
->>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
     for amplicon in bins:
         if amplicon not in amplicons:
             print(f"WARNING: {amplicon} target not found in amplicon sequence database", file=sys.stderr)
@@ -383,11 +372,7 @@ if not bins:
     sys.exit(1)
 
 outdir = args.alignments
-<<<<<<< HEAD
 print(f"INFO: Writing amplicon fasta files to directory: {outdir}", file=sys.stderr)
-=======
-print(f"INFO: Writing amplicon fasta files to {outdir}", file=sys.stderr)
->>>>>>> ab1b0ba044df3bf30a708387c47c9c0788a39602
 if not os.path.isdir(outdir):
     os.mkdir(outdir)
 wrte_amplicon_fastas(asvs, bins, amplicons, outdir=outdir)
