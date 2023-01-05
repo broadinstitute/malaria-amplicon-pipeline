@@ -101,7 +101,7 @@ optional arguments:
   --saveRdata SAVERDATA
                         Optionally save dada2 part of this run as Rdata object
 ```
-## Post-DADA2 Filters (optional post-processing) :  
+## Post-DADA2 Filters (optional processing parasite only) :  
 There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
 ```
 usage: Rscript postProc_dada2.R [-h] [-s SEQTAB] [-ref REFERENCE]
@@ -134,7 +134,7 @@ optional arguments:
                         Strains (Required if --ref2 mentioned)
   --parallel            Enable parallel processing
 ```
-## ASV to CIGAR / Variant Calling (optional post-processing) :
+## ASV to CIGAR / Variant Calling (optional processing) :
 This Step is also an additional step concerning Parasite target amplicons. This will change the representation of the ASV sequences in a kind of pseudo-CIGAR string format, while also masking homopolymer runs, low complexity runs and filtering out sequences tagged in the previous step.  
 #### General idea:
 1. Parse DADA2 pipeline outputs to get ASVs → amplicon target.  
