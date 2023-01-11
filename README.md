@@ -65,12 +65,15 @@ If however one wishes to supply the inputs independently without requiring a JSO
 ```
 usage: AmpliconPipeline.py [-h] [--json JSON] [--path_to_meta PATH_TO_META]
                            [--skip_preprocess] [--keep_primers] [--pr1 PR1]
-                           [--pr2 PR2] [--Class CLASS] [--maxEE MAXEE]
-                           [--trimRight TRIMRIGHT] [--minLen MINLEN]
-                           [--truncQ TRUNCQ] [--max_consist MAX_CONSIST]
-                           [--omegaA OMEGAA]
+                           [--pr2 PR2] [--skip_dada2] [--Class CLASS]
+                           [--maxEE MAXEE] [--trimRight TRIMRIGHT]
+                           [--minLen MINLEN] [--truncQ TRUNCQ]
+                           [--max_consist MAX_CONSIST] [--omegaA OMEGAA]
                            [--justConcatenate JUSTCONCATENATE]
-                           [--saveRdata SAVERDATA]
+                           [--saveRdata SAVERDATA] [--iseq]
+                           [--reference REFERENCE] [--demux_by_amp]
+                           [--overlap_pr1 OVERLAP_PR1]
+                           [--overlap_pr2 OVERLAP_PR2]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -81,6 +84,7 @@ optional arguments:
   --keep_primers        Skip primer removal step
   --pr1 PR1             Path to forward primers FASTA file
   --pr2 PR2             Path to reverse primers FASTA file
+  --skip_dada2          Mention if DADA2 processing is not needed
   --Class CLASS         Specify Analysis class. Accepts one of two:
                         parasite/vector
   --maxEE MAXEE         Maximum Expected errors (dada2 filtering argument)
@@ -100,6 +104,19 @@ optional arguments:
                         merge (dada2 argument)
   --saveRdata SAVERDATA
                         Optionally save dada2 part of this run as Rdata object
+  --iseq                Specify whether the data is from a paired iseq 2 x 150
+                        bp sequencing run
+  --reference REFERENCE
+                        Path to reference target sequences (If --iseq flag is
+                        set)
+  --demux_by_amp        Demultiplex reads in each sample by Amplicon (requires
+                        pr1 and pr2)
+  --overlap_pr1 OVERLAP_PR1
+                        Path to forward primers for shorter overlapping
+                        targets FASTA file (For iseq run only)
+  --overlap_pr2 OVERLAP_PR2
+                        Path to reverse primers for shorter overlapping
+                        targets FASTA file (For iseq run only)
 ```
 ## Post-DADA2 Filters (optional processing parasite only) :  
 There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
