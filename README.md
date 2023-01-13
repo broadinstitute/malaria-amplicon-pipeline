@@ -28,7 +28,7 @@ The tool accepts inputs either independently or combined in the form of a JSON f
 1. Path_to_meta : The workflow depends on a list of fastq file names tab separated and first column representing sample ID and successive columns (2 and 3) for full path to the forward and reverse end fastq files. This JSON input is required and must point to the text file having the list of raw fastqs.
 2. Class : This input is required and currently can accept only two entries, specific to lowercase ; parasite and vector 
 
-#### Optional Inputs :
+#### Optional JSON Inputs :
 1. run_dir : This must point to the working directory. If left blank (with empty quotes “”), it will take the parent directory where the metafile with a list to fastq files are and all successive files will be written into this directory.
 2. tool : Path to where the workflow scripts are. This path is used in order to call other dependent modules. This is generally different from the working directory to keep things clean and more organized. If blank (“”) it will default to the current central location where the pipeline is on the server.
 3. preprocess : This is a numeric flag. If numeric 1, the script will go ahead with the pre-processing step. If numeric 0, it will skip preprocessing (adapter removal and QC). Default is 1, if kept blank (“”)
@@ -61,7 +61,7 @@ If using the JSON input file, the main script can be initiated as given
 ```
 python AmpliconPipeline.py --json inputs.json
 ```
-If however one wishes to supply the inputs independently without requiring a JSON input file, one could do so in which case each input would have its own flag. The entire list of input flags are given below.
+If however one wishes to supply the inputs independently without requiring a JSON input file, one could do so in which case each input would have its own flag. The entire list of input flags with their description are given below.
 ```
 usage: AmpliconPipeline.py [-h] [--json JSON] [--path_to_meta PATH_TO_META]
                            [--skip_preprocess] [--keep_primers] [--pr1 PR1]
@@ -118,6 +118,9 @@ optional arguments:
                         Path to reverse primers for shorter overlapping
                         targets FASTA file (For iseq run only)
 ```
+## De-multiplex by amplicon
+If the amplicon list is relatively small (eg. < 10 )
+
 ## Post-DADA2 Filters (optional processing parasite only) :  
 There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
 ```
