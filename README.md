@@ -119,10 +119,10 @@ optional arguments:
                         targets FASTA file (For iseq run only)
 ```
 ## De-multiplex by amplicon
-If the amplicon list is relatively small (eg. < 10 )
+If the amplicon list is relatively small (eg. < 10 ), it is possible to demultiplex reads by amplicon via ```--demux_by_amp``` option. This will produce separate directories and paired fastq files for each amplicon based on reads matching with primers (primers will be removed from the reads) and individual dada2 runs on each amplicon. Note that for larger amplicon panels the dada2 runs are slower and computationally expensive hence its recommended for panels fewer than 10 amplicons.
 
 ## Post-DADA2 Filters (optional processing parasite only) :  
-There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
+There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome and for a larger set (> 10 amplicons). This step assumes ```--demux_by_amp``` is not used. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
 ```
 usage: Rscript postProc_dada2.R [-h] [-s SEQTAB] [-ref REFERENCE]
                                          [-ref2 REFERENCE2] [-b BIMERA]
@@ -155,7 +155,8 @@ optional arguments:
   --parallel            Enable parallel processing
 ```
 ## ASV to CIGAR / Variant Calling (optional processing) :
-This Step is also an additional step concerning Parasite target amplicons. This will change the representation of the ASV sequences in a kind of pseudo-CIGAR string format, while also masking homopolymer runs, low complexity runs and filtering out sequences tagged in the previous step.  
+This Step is also an additional step concerning Parasite target amplicons. This will change the representation of the ASV sequences in a kind of pseudo-CIGAR string format, while also masking homopolymer runs, low complexity runs and filtering out sequences tagged in the previous step. This step assumes Post-DADA2 step is used as it requires mapped ASV table as one of the inputs.
+
 #### General idea:
 1. Parse DADA2 pipeline outputs to get ASVs → amplicon target.  
    a. Fasta file of ASV sequences.  
