@@ -119,7 +119,21 @@ optional arguments:
                         targets FASTA file (For iseq run only)
 ```
 ## De-multiplex by amplicon
-If the amplicon list is relatively small (eg. < 10 ), it is possible to demultiplex reads by amplicon via ```--demux_by_amp``` option. This will produce separate directories and paired fastq files for each amplicon based on reads matching with primers (primers will be removed from the reads) and individual dada2 runs on each amplicon. Note that for larger amplicon panels the dada2 runs are slower and computationally expensive hence its recommended for panels fewer than 10 amplicons.
+If the amplicon list is relatively small (eg. < 10 ), it is possible to demultiplex reads by amplicon via ```--demux_by_amp``` option. This will produce separate directories and paired fastq files for each amplicon based on reads matching with primers (primers will be removed from the reads) and individual dada2 runs on each amplicon. Note that for larger amplicon panels the dada2 runs are linear and therefore slower and computationally expensive hence it is recommended for panels fewer than 10 amplicons. The inputs that go along are as follows.
+```
+--demux_by_amp : Logical Flag. Enables workflow to demultiplex reads by amplicon.
+--justConcatenate : This option will now allow a string of 0's and 1's to indicate which amplicons (following the same order of primers provided) are to be merged (> 12 bp) versus which are to be contatenated with N's following the DADA2 step. NOTE that if left with a single 0 or 1 would imply that all amplicons would follow that option. Unequal number of 0's and 1's than the primers would result in error.
+```
+
+## Handling iSeq (2x150bp) short reads
+There is an additional step added in for reads shorter than an illumina Miseq run (2x250 bp). Since there is a possibility of shorter reads (Eg. Illumina iseq 2x150 bp) not covering the entire amplicon length (0 < x < 12 bp overlap between forward and reverse reads) for a subset of amplicons, one could use the ```--iseq``` option which would essentially split the files into reads corresponding to amplicons which have sufficent overlap versus reads corresponding to amplicons with little to no overlap. This would require the user to provide additional inputs as follows
+```
+--iseq : Logical flag. Enables workflow to bifurcate files to handle shorter read length which may include uncovered region of an amplicon.
+--reference : Path to reference target sequences in FASTA format. Whole genome FASTA is currently not supported.
+--overlap_pr1 : A subset of forward primers of targets which conntain sufficent (> 12 bp) overlap between forward and reverse ends.
+--overlap_pr2 : A subset of reverse primers of targets which contain sufficient (> 12 bp) overlap between forward and reverse ends. 
+```
+**_NOTE_** : _Use of ```--demux_by_amp``` option along with ```--iseq``` option is currently not supported._
 
 ## Post-DADA2 Filters (optional processing parasite only) :  
 There is an additional semi-workflow for Post-processing the obtained Amplicon Sequence Variant (ASV) output from the main workflow. This step is intended to be a follow-up step if the target amplicons are from the Parasite genome and for a larger set (> 10 amplicons). This step assumes ```--demux_by_amp``` is not used. Briefly, this step will map the given ASV sequences to the target amplicons while keeping track of non-matching sequences with the number of nucleotide differences and insertions/deletions. It will then output a table of ASV sequences with the necessary information. Optionally, a FASTA file can be created in addition to the table output, listing the sequences in standard FASTA format. A filter tag can be provided to tag the sequences above certain nucleotide (SNV) and length differences due to INDELs and a bimera column to tag sequences which are bimeric (a hybrid of two sequences). A complete list of inputs given below.  
