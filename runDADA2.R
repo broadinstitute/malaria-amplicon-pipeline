@@ -1,9 +1,6 @@
 #!/bin/R env
 
-library(dada2)
-library(limma)
 library(argparse)
-library(data.table)
 
 # Custom filtering, denoising parameters (if not default) can be provided as a separate config file?
 
@@ -31,6 +28,10 @@ parser$add_argument("-jC", "--justConcatenate", type="integer",
                     help="Specify whether ASVs need to be concatinated with Ns instead of merging")
 parser$add_argument("--bimera", action='store_true', help="Optionally output list of sequences identified as bimeras")
 args <- parser$parse_args()
+
+library(dada2)
+library(limma)
+library(data.table)
 
 # Universal parameters
 work_dir <- args$dir
