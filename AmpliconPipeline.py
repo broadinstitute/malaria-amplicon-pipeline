@@ -8,6 +8,7 @@ import multiprocessing
 from Bio import Align
 import sys
 import os
+import glob
 import json
 
 def create_meta(path_to_fq,output_file,pattern_fw,pattern_rv):
@@ -26,6 +27,15 @@ def preprocess(sampleid,fileF,fileR, qvalue = 5, length = 20):
 	else:
 		sys.exit('Pre-process halted : one or both of the fastq files not found! Exiting..')
 	return()
+
+def Runfastqc(Filelist):
+	for file in glob.glob(Filelist):
+		if os.path.isfile(file):
+			proc = subprocess.Popen(['fastqc', file],stdout=sys.stdout, stderr=sys.stderr)
+			proc.wait()
+		else:
+			print('Warning : Fastq file %s not found! Moving to next..' % file)
+	return(True)
 
 def trim_primer(sampleid,fileF,fileR,pr1,pr2,prefix,keep_untrim=False):
 	if os.path.isfile(fileF) and os.path.isfile(fileR):
@@ -71,11 +81,12 @@ def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--json', help="Path to json inputs")
-	parser.add_argument('--path_to_meta', help="Path to input fastq files")
+	parser.add_argument('--path_to_meta', help="Path to a text file that lists paths to input fastq files (one sample per line")
 	parser.add_argument('--skip_preprocess', action="store_true", help="Mention if preprocessing is not needed")
 	parser.add_argument('--keep_primers', action="store_true", help="Skip primer removal step")
 	parser.add_argument('--pr1', help="Path to forward primers FASTA file")
 	parser.add_argument('--pr2', help="Path to reverse primers FASTA file")
+	parser.add_argument('--skip_QC', action="store_true", help="Skip FastQC for intermediate FastQs")
 	parser.add_argument('--skip_dada2', action="store_true", help="Mention if DADA2 processing is not needed")
 	parser.add_argument('--Class', help="Specify Analysis class. Accepts one of two: parasite/vector")
 	parser.add_argument('--maxEE', help="Maximum Expected errors (dada2 filtering argument)")
@@ -149,6 +160,20 @@ def main():
 			pattern_fw="*_val_1.fq.gz", pattern_rv="*_val_2.fq.gz")
 		path_to_meta = os.path.join(run_dir,"preprocess_meta.txt")
 
+#### QC on Preprocessed FQs ####
+
+	if argparse_dict['skip_QC']:
+		print("skipping FastQC on Preprocessed files..")
+		pass
+	else:
+		print("Now running FastQC on Preprocessed files..")
+		QC = Runfastqc(os.path.join(run_dir,"preprocess_fq","*.fq.gz"))
+		if QC:
+			cmd = ['multiqc', '-o', os.path.join(run_dir,"preprocess_fq"), os.path.join(run_dir,"preprocess_fq")]
+			proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+			proc.wait()
+
+
 #### Primer removal steps ####
 
 	if argparse_dict['keep_primers']:
@@ -158,20 +183,20 @@ def main():
 		if argparse_dict['pr1'] is not None:
 			print('NOTE : --pr1 argument found. This overrides any json input provided')
 			pr1 = argparse_dict['pr1']
-			mark = True
+			pr1mark = True
 		else:
 			print('NOTE : JSON inputs not provided and --pr1 argument not found. Skipping primer removal..')
-			mark = False
+			pr1mark = False
 
 		if argparse_dict['pr2'] is not None:
 			print('NOTE : --pr2 argument found. This overrides any json input provided')
 			pr2 = argparse_dict['pr2']
-			mark = True
+			pr2mark = True
 		else:
 			print('NOTE : JSON inputs not provided and --pr2 argument not found. Skipping primer removal..')
-			mark = False
+			pr2mark = False
 
-		if mark:
+		if pr1mark and pr2mark:
 			print("Now running Primer removal..")
 			if not os.path.exists(os.path.join(run_dir,"prim_fq")):
 				os.mkdir(os.path.join(run_dir,"prim_fq"))
@@ -193,7 +218,7 @@ def main():
 				else:
 					sys.exit('Execution halted: iseq flag set and overlapping Rev primer not found')
 
-				# Trim primers off Overlapping short targets and demux them to different file
+				# Trim primers off Overlapping short targets and write them to different file
 				p = multiprocessing.Pool()
 				for sample in samples:
 					slist = sample.split()
@@ -240,7 +265,8 @@ def main():
 					pattern_fw="*_prim_1.fq.gz", pattern_rv="*_prim_2.fq.gz")
 				path_to_meta = os.path.join(run_dir,"prim_meta.txt")
 			meta.close()
-
+		else:
+			print("Either set of primer files are missing. Skipping Primer removal..")
 
 	print("Done with primer removal")
 
