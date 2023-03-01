@@ -37,6 +37,16 @@ def Runfastqc(Filelist):
 			print('Warning : Fastq file %s not found! Moving to next..' % file)
 	return(True)
 
+def MakeFasta(dataFrame,columnNumber,outputFile):
+	ids = dataFrame.iloc[:,0]
+	seqs = dataFrame.iloc[:,columnNumber]
+	file = open(outputFile,'w+')
+	for i in range(len(seqs)):
+		header = '>' + ids[i] + ';' + 'min_overlap=' + str(len(seqs[i]))
+		file.write(header + "\n" + "^" + seqs[i] + "\n")
+	file.close()
+	return(outputFile)
+
 def trim_primer(sampleid,fileF,fileR,pr1,pr2,prefix,keep_untrim=False):
 	if os.path.isfile(fileF) and os.path.isfile(fileR):
 		if keep_untrim:
@@ -102,6 +112,7 @@ def main():
 	parser.add_argument('--demux_by_amp', action="store_true", help="Demultiplex reads in each sample by Amplicon (requires pr1 and pr2)")
 	parser.add_argument('--overlap_pr1', help="Path to forward primers for shorter overlapping targets FASTA file (For iseq run only)")
 	parser.add_argument('--overlap_pr2', help="Path to reverse primers for shorter overlapping targets FASTA file (For iseq run only)")
+	parser.add_argument('--inputs', help="Path to a TXT file contnaining amplicon List, primer seqs, fragment length, concat/merge option")
 
 	# Converting args parser for compatibility with JSON
 	args = parser.parse_args()
@@ -125,15 +136,26 @@ def main():
 
 	if argparse_dict['path_to_meta'] is not None:
 		path_to_meta = argparse_dict['path_to_meta']
+		if os.path.isfile(path_to_meta):
+			run_dir = os.path.abspath(os.path.join(path_to_meta, os.pardir))
+			sys.stdout = open((run_dir + "/stdout.txt"),"a")
+			sys.stderr = open((run_dir + "/stderr.txt"),"a")
+		else:
+			sys.exit('Execution halted : Metafile with sample list not found! Exiting..')
 	else:
 		sys.exit('Execution halted : JSON inputs not provided and --path_to_meta not found! Exiting..')
 
-	if os.path.isfile(path_to_meta):
-		run_dir = os.path.abspath(os.path.join(path_to_meta, os.pardir))
-		sys.stdout = open((run_dir + "/stdout.txt"),"a")
-		sys.stderr = open((run_dir + "/stderr.txt"),"a")
+#### Reading Inputs File ####
+	
+	if argparse_dict['inputs'] is not None:
+		inputs = argparse_dict['inputs']
+		if os.path.isfile(inputs):
+			inputsDF = pandas.read_csv(inputs, sep="\t")
+		else:
+			sys.exit('NOTE : inputs file not found!')
 	else:
-		sys.exit('Execution halted : Metafile with sample list not found! Exiting..')
+		argparse_dict['keep_primers'] = True
+		print('NOTE : inputs file not provided. This will skip primer removal and demux_by_amp options')
 
 #### Adapter removal steps ####
 
@@ -180,43 +202,27 @@ def main():
 		print("skipping Primer removal step..")
 		pass
 	else:
-		if argparse_dict['pr1'] is not None:
-			print('NOTE : --pr1 argument found. This overrides any json input provided')
-			pr1 = argparse_dict['pr1']
-			pr1mark = True
-		else:
-			print('NOTE : JSON inputs not provided and --pr1 argument not found. Skipping primer removal..')
-			pr1mark = False
-
-		if argparse_dict['pr2'] is not None:
-			print('NOTE : --pr2 argument found. This overrides any json input provided')
-			pr2 = argparse_dict['pr2']
-			pr2mark = True
-		else:
-			print('NOTE : JSON inputs not provided and --pr2 argument not found. Skipping primer removal..')
-			pr2mark = False
-
-		if pr1mark and pr2mark:
-			print("Now running Primer removal..")
+		## Make Primer files from input ##
+		pr1 = MakeFasta(inputsDF,1,os.path.join(run_dir,"PrimersF.fasta"))
+		pr2 = MakeFasta(inputsDF,2,os.path.join(run_dir,"PrimersR.fasta"))
+		
+		## Make Primer trimming directory ##
+		if os.path.isfile(pr1) and os.path.isfile(pr2):
+			print("Now running Primer removal..")	
 			if not os.path.exists(os.path.join(run_dir,"prim_fq")):
 				os.mkdir(os.path.join(run_dir,"prim_fq"))
 			else:
 				print("Directory %s already exists.." % (os.path.join(run_dir,"prim_fq")))
 			
+			## Run Primer Removal ##
 			meta = open(path_to_meta,'r')
 			samples = meta.readlines()
 			if argparse_dict['iseq']:
-				if argparse_dict['overlap_pr1'] is not None:
-					print('NOTE : --overlap_pr1 argument found. This overrides any json input provided')
-					overlap_pr1 = argparse_dict['overlap_pr1']
-				else:
-					sys.exit('Execution halted: iseq flag set and overlapping Fwd primer not found')
-
-				if argparse_dict['overlap_pr2'] is not None:
-					print('NOTE : --overlap_pr2 argument found. This overrides any json input provided')
-					overlap_pr2 = argparse_dict['overlap_pr2']
-				else:
-					sys.exit('Execution halted: iseq flag set and overlapping Rev primer not found')
+				## Subset primers that do not need concatenation ##
+				concat = inputsDF.iloc[:,-1]
+				inputsDF_overlap = inputsDF[~concat]
+				overlap_pr1 = MakeFasta(inputsDF_overlap,1,os.path.join(run_dir,"OverlappingPrimersF.fasta"))
+				overlap_pr2 = MakeFasta(inputsDF_overlap,2,os.path.join(run_dir,"OverlappingPrimersR.fasta"))
 
 				# Trim primers off Overlapping short targets and write them to different file
 				p = multiprocessing.Pool()
@@ -266,7 +272,7 @@ def main():
 				path_to_meta = os.path.join(run_dir,"prim_meta.txt")
 			meta.close()
 		else:
-			print("Either set of primer files are missing. Skipping Primer removal..")
+			sys.exit("Either set of primer files are missing! Exiting..")
 
 	print("Done with primer removal")
 
