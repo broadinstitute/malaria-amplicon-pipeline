@@ -47,6 +47,7 @@ def MakeFasta(dataFrame,columnNumber,outputFile):
 	file.close()
 	return(outputFile)
 
+## add functionality to have diff Fq1 and Fq2 that match primer info ##
 def trim_primer(sampleid,fileF,fileR,pr1,pr2,prefix,keep_untrim=False):
 	if os.path.isfile(fileF) and os.path.isfile(fileR):
 		if keep_untrim:
@@ -168,7 +169,7 @@ def main():
 			os.mkdir(os.path.join(run_dir,"preprocess_fq"))
 		else:
 			print("Directory %s already exists.." % (os.path.join(run_dir,"preprocess_fq")))
-
+			## If preprocess Fastq directory exsists, consider err/warning message ##
 		meta = open(path_to_meta,'r')
 		samples = meta.readlines()
 		p = multiprocessing.Pool()
@@ -252,6 +253,7 @@ def main():
 				create_meta(os.path.join(run_dir,"prim_fq"),os.path.join(run_dir,"iseq_nop_prim_meta.txt"),
 					pattern_fw="*_iseq_nop_1.fq.gz", pattern_rv="*_iseq_nop_2.fq.gz")
 				temp_meta.close()
+			## Make demux_by_amp prior to iseq ##
 			elif argparse_dict['demux_by_amp']:
 				p = multiprocessing.Pool()
 				for sample in samples:
@@ -331,7 +333,8 @@ def main():
 		else:
 			saveRdata = ''
 			print('NOTE : JSON inputs not provided and --saveRdata argument not found. By Default, DADA2 run is not saved as an Rdata object')
-
+		
+		## Check on relevance ##
 		if argparse_dict['iseq']:
 			print('NOTE : with --iseq enabled, --justConcatenate is irrelevant and ignored')
 		elif argparse_dict['justConcatenate'] is not None:
@@ -356,7 +359,7 @@ def main():
 			else:
 				print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2","dada2_op")))
 
-			print("Running DADA2 on op targets")
+			print("Running DADA2 on overlapping targets")
 			# Run DADA2 on op targets
 			cmdOp = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', os.path.join(run_dir,"iseq_op_prim_meta.txt"),
 			'-d', os.path.join(run_dir,'run_dada2','dada2_op'),
