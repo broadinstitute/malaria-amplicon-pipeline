@@ -203,6 +203,8 @@ def main():
 		print("skipping Primer removal step..")
 		pass
 	else:
+		# list of Amplicons that need to be concatenated #
+		concat = inputsDF.iloc[:,-1]
 		## Make Primer files from input ##
 		pr1 = MakeFasta(inputsDF,1,os.path.join(run_dir,"PrimersF.fasta"))
 		pr2 = MakeFasta(inputsDF,2,os.path.join(run_dir,"PrimersR.fasta"))
@@ -218,9 +220,16 @@ def main():
 			## Run Primer Removal ##
 			meta = open(path_to_meta,'r')
 			samples = meta.readlines()
-			if argparse_dict['iseq']:
+			if argparse_dict['demux_by_amp']:
+				p = multiprocessing.Pool()
+				for sample in samples:
+					slist = sample.split()
+					p.apply_async(trim_primer, args=(slist[0],slist[1],slist[2],pr1,pr2,"{name}"))
+				p.close()
+				p.join()
+
+			elif argparse_dict['iseq']:
 				## Subset primers that do not need concatenation ##
-				concat = inputsDF.iloc[:,-1]
 				inputsDF_overlap = inputsDF[~concat]
 				overlap_pr1 = MakeFasta(inputsDF_overlap,1,os.path.join(run_dir,"OverlappingPrimersF.fasta"))
 				overlap_pr2 = MakeFasta(inputsDF_overlap,2,os.path.join(run_dir,"OverlappingPrimersR.fasta"))
@@ -253,14 +262,7 @@ def main():
 				create_meta(os.path.join(run_dir,"prim_fq"),os.path.join(run_dir,"iseq_nop_prim_meta.txt"),
 					pattern_fw="*_iseq_nop_1.fq.gz", pattern_rv="*_iseq_nop_2.fq.gz")
 				temp_meta.close()
-			## Make demux_by_amp prior to iseq ##
-			elif argparse_dict['demux_by_amp']:
-				p = multiprocessing.Pool()
-				for sample in samples:
-					slist = sample.split()
-					p.apply_async(trim_primer, args=(slist[0],slist[1],slist[2],pr1,pr2,"{name}"))
-				p.close()
-				p.join()
+
 			else:	
 				p = multiprocessing.Pool()
 				for sample in samples:
@@ -350,9 +352,36 @@ def main():
 		else:
 			print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2")))
 
-		## Check for short iseq reads option
+		## Check for demux by amplicon option
+		if argparse_dict['demux_by_amp']:
+			# Loop DADA2 over amplicons
+			n = 0
+			amplist = open(pr1,'r').readlines()
+			amplicons = list(filter(lambda x:'>' in x, amplist))
+			if len(str(justConcatenate)) == len(amplicons):
+				jc = str(justConcatenate)
+			else:
+				jc = '0'*len(amplist)
+			for amplicon in amplicons:
+				a2 = amplicon.rstrip().split('>')[1]
+				if not os.path.exists(os.path.join(run_dir,"run_dada2",a2.split(';')[0])):
+					os.mkdir(os.path.join(run_dir,"run_dada2",a2.split(';')[0]))
+				else:
+					print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2",a2.split(';')[0])))
+				path_to_meta = os.path.join(run_dir,a2.split(';')[0]+"_meta.txt")
+				create_meta(os.path.join(run_dir,"prim_fq"),path_to_meta,
+					pattern_fw="*_"+a2+"_1.fq.gz", pattern_rv="*_"+a2+"_2.fq.gz")
+				cmd = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', path_to_meta, '-d', os.path.join(run_dir,"run_dada2",a2.split(';')[0]),
+				'-o', a2.split(';')[0]+'_seqtab.tsv', '-c', Class, '-ee', str(maxEE), '-tR', str(trimRight), '-mL', str(minLen), '-tQ', str(truncQ),
+				'-mC', str(max_consist), '-wA', str(omegaA), '-jC', jc[n], '-s', saveRdata, '--bimera']
+				proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+				proc.wait()
+				print(n)
+				print(jc[n])
+				n += 1
 
-		if argparse_dict['iseq']:
+		## Check for short iseq reads option
+		elif argparse_dict['iseq']:
 			
 			if not os.path.exists(os.path.join(run_dir,"run_dada2","dada2_op")):
 				os.mkdir(os.path.join(run_dir,"run_dada2","dada2_op"))
@@ -406,34 +435,6 @@ def main():
 
 			# Merge two ASV tables
 			seqtab.to_csv(os.path.join(run_dir,'run_dada2','seqtab_iseq.tsv'), sep = "\t")
-
-		## Check for demux by amplicon option
-		elif argparse_dict['demux_by_amp']:
-			# Loop DADA2 over amplicons
-			n = 0
-			amplist = open(pr1,'r').readlines()
-			amplicons = list(filter(lambda x:'>' in x, amplist))
-			if len(str(justConcatenate)) == len(amplicons):
-				jc = str(justConcatenate)
-			else:
-				jc = '0'*len(amplist)
-			for amplicon in amplicons:
-				a2 = amplicon.rstrip().split('>')[1]
-				if not os.path.exists(os.path.join(run_dir,"run_dada2",a2.split(';')[0])):
-					os.mkdir(os.path.join(run_dir,"run_dada2",a2.split(';')[0]))
-				else:
-					print("Directory %s already exists.." % (os.path.join(run_dir,"run_dada2",a2.split(';')[0])))
-				path_to_meta = os.path.join(run_dir,a2.split(';')[0]+"_meta.txt")
-				create_meta(os.path.join(run_dir,"prim_fq"),path_to_meta,
-					pattern_fw="*_"+a2+"_1.fq.gz", pattern_rv="*_"+a2+"_2.fq.gz")
-				cmd = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', path_to_meta, '-d', os.path.join(run_dir,"run_dada2",a2.split(';')[0]),
-				'-o', a2.split(';')[0]+'_seqtab.tsv', '-c', Class, '-ee', str(maxEE), '-tR', str(trimRight), '-mL', str(minLen), '-tQ', str(truncQ),
-				'-mC', str(max_consist), '-wA', str(omegaA), '-jC', jc[n], '-s', saveRdata, '--bimera']
-				proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
-				proc.wait()
-				print(n)
-				print(jc[n])
-				n += 1
 
 		else:
 			cmd = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', path_to_meta, '-d', os.path.join(run_dir,'run_dada2'),
