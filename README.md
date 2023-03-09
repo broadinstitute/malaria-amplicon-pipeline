@@ -21,6 +21,10 @@ source activate <name-of-environment>
 A detail description on creating a conda environment is given here: 
 https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
 
+## Flowchart
+The flowchart of the pipeline as well as some (active) modifications:
+https://lucid.app/lucidchart/invitations/accept/inv_a81a5b95-5516-4d2e-a305-8743ceb503d6
+
 ## Inputs :
 The tool accepts inputs either independently or combined in the form of a JSON file. The list of inputs are given in the file ```inputs.json```
 
