@@ -358,10 +358,6 @@ def main():
 			n = 0
 			amplist = open(pr1,'r').readlines()
 			amplicons = list(filter(lambda x:'>' in x, amplist))
-			if len(str(justConcatenate)) == len(amplicons):
-				jc = str(justConcatenate)
-			else:
-				jc = '0'*len(amplist)
 			for amplicon in amplicons:
 				a2 = amplicon.rstrip().split('>')[1]
 				if not os.path.exists(os.path.join(run_dir,"run_dada2",a2.split(';')[0])):
@@ -371,13 +367,24 @@ def main():
 				path_to_meta = os.path.join(run_dir,a2.split(';')[0]+"_meta.txt")
 				create_meta(os.path.join(run_dir,"prim_fq"),path_to_meta,
 					pattern_fw="*_"+a2+"_1.fq.gz", pattern_rv="*_"+a2+"_2.fq.gz")
+				if concat[n]:
+					jc = '1'
+				else:
+					jc = '0'
+				print('Running dada2 on %s' % amplicon)
 				cmd = ['Rscript', os.path.join(path,'runDADA2.R'), '-p', path_to_meta, '-d', os.path.join(run_dir,"run_dada2",a2.split(';')[0]),
 				'-o', a2.split(';')[0]+'_seqtab.tsv', '-c', Class, '-ee', str(maxEE), '-tR', str(trimRight), '-mL', str(minLen), '-tQ', str(truncQ),
-				'-mC', str(max_consist), '-wA', str(omegaA), '-jC', jc[n], '-s', saveRdata, '--bimera']
+				'-mC', str(max_consist), '-wA', str(omegaA), '-jC', jc, '-s', saveRdata, '--bimera']
 				proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
 				proc.wait()
-				print(n)
-				print(jc[n])
+				if argparse_dict['iseq'] and concat[n]:
+					seqtab_path = os.path.join(run_dir,"run_dada2",a2.split(';')[0],a2.split(';')[0]+"_seqtab.tsv")
+					adjASV = ['Rscript', os.path.join(path, 'adjustASV.R'), '-s', seqtab_path, '-ref', str(argparse_dict['reference']),
+					'-o', os.path.join(run_dir,"run_dada2",a2.split(';')[0],a2.split(';')[0]+'_correctedASV.txt')]
+					procASV = subprocess.Popen(adjASV, stdout=sys.stdout, stderr=sys.stderr)
+					procASV.wait()
+				else:
+					print("Skipping adjustASV step on %s" % amplicon)
 				n += 1
 
 		## Check for short iseq reads option
