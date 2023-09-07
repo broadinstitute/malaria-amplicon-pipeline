@@ -1,6 +1,9 @@
 #!/bin/R env
 
+library(dada2)
+library(limma)
 library(argparse)
+library(data.table)
 
 # Custom filtering, denoising parameters (if not default) can be provided as a separate config file?
 
@@ -28,10 +31,6 @@ parser$add_argument("-jC", "--justConcatenate", type="integer",
                     help="Specify whether ASVs need to be concatinated with Ns instead of merging")
 parser$add_argument("--bimera", action='store_true', help="Optionally output list of sequences identified as bimeras")
 args <- parser$parse_args()
-
-library(dada2)
-library(limma)
-library(data.table)
 
 # Universal parameters
 work_dir <- args$dir
@@ -187,6 +186,14 @@ dev.off()
 # Create paths for filtered fastq
 filtFs <- file.path(work_dir, "filtered", paste0(sample.names, "_filt_R1.fastq.gz"))
 filtRs <- file.path(work_dir, "filtered", paste0(sample.names, "_filt_R2.fastq.gz"))
+
+print("DEBUG in runDADA2.R =======")
+
+save(list = ls(all.names = TRUE), file = "currentEnvironment_runDADA2.RData")
+
+#print("samples.names",sample.names)
+#print("names(filtFs)",names(filtFs))
+
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 
@@ -195,13 +202,13 @@ if (filter == TRUE) {
 	print("filtering samples...")
 	out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs,
             maxN=0, maxEE=maxEE, trimRight=trimRight, truncQ=truncQ, minLen=minLen,
-            rm.phix=TRUE, compress=TRUE, multithread=TRUE, verbose=TRUE,
+            rm.phix=TRUE, compress=TRUE, multithread=10, verbose=TRUE,
             matchIDs=matchIDs)
 	print("filtering done!")
 } else {
 	print("skipping filter except mandatory removal of N's... ")
 	out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncQ=c(0,0), maxN=0, rm.phix=TRUE,
-            compress=TRUE, multithread=TRUE, verbose=TRUE, matchIDs=matchIDs)
+            compress=TRUE, multithread=10, verbose=TRUE, matchIDs=matchIDs)
 }
 
 # Report and Correct for samples with zero reads after filter
@@ -216,9 +223,9 @@ out <- out[(out[,2] != 0),]
 
 #Compute the error model
 print("starting error model learning for forward reads...")
-errF <- learnErrors(filtFs, multithread=TRUE, verbose=2, randomize=randomize, MAX_CONSIST=max_consist)
+errF <- learnErrors(filtFs, multithread=10, verbose=2, randomize=randomize, MAX_CONSIST=max_consist)
 print("starting error model learning for reverse reads...")
-errR <- learnErrors(filtRs, multithread=TRUE, verbose=2, randomize=randomize, MAX_CONSIST=max_consist)
+errR <- learnErrors(filtRs, multithread=10, verbose=2, randomize=randomize, MAX_CONSIST=max_consist)
 
 #Plot the Errors
 png(paste0(work_dir,"/errF.png"), height = 800, width = 700)
@@ -237,9 +244,9 @@ names(derepRs) <- sample.names
 
 #Run core DADA2 algorithm
 print("starting dada2 for forward reads...")
-dadaFs <- dada(derepFs, err=errF, selfConsist=selfConsist, multithread=TRUE, verbose=TRUE, OMEGA_A=omega_a)
+dadaFs <- dada(derepFs, err=errF, selfConsist=selfConsist, multithread=10, verbose=TRUE, OMEGA_A=omega_a)
 print("starting dada2 for reverse reads...")
-dadaRs <- dada(derepRs, err=errR, selfConsist=selfConsist, multithread=TRUE, verbose=TRUE, OMEGA_A=omega_a)
+dadaRs <- dada(derepRs, err=errR, selfConsist=selfConsist, multithread=10, verbose=TRUE, OMEGA_A=omega_a)
 
 # Merge reads
 print("merging paird ends...")
@@ -256,7 +263,7 @@ print(table(nchar(getSequences(seqtab))))
 #Remove Chimeras
 if(args$bimera) {
   print("identifying bimeric sequences...")
-  seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+  seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=10, verbose=TRUE)
   print("Number of non-bimeric sequences:")
   print(dim(seqtab.nochim)[2])
   print("Percentage of reads which are non-bimeric:")

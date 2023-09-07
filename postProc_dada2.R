@@ -31,6 +31,9 @@ library(seqinr)
 library(parallel)
 library(doMC)
 
+
+print("DEBUG1 in postProc_dada2.R =====")
+
 # Pairwise Alignment
 seq_align <- function(seqs_df, path_to_ref, overlap = TRUE, parallel = TRUE)
 {
@@ -149,15 +152,27 @@ if (!args$no_reference) {
   		refseq <- toupper(sapply(refasta,c2s))
   		amplicons <- as.character(names(refseq))
   		# Alignment with RefSet
+  		
+  		print("DEBUG2 in postProc_dada2.R =====")
+  		
+  		save(list = ls(all.names = TRUE), file = "currentEnvironment_postProc_dada2.RData")
+  		
   		align_df <- seq_align(seqs_df = seqs_df, path_to_ref = path_to_refseq[p], overlap = TRUE, parallel = args$parallel)
   		align_df$refid <- as.character(align_df$refid)
   		align_df$hapid <- as.character(align_df$hapid)
-
- 		 ## Map truthset onto ASV summary table based on exact and inexact matches to truth set
+      
+  		print("DEBUG3 in postProc_dada2.R =====")
+  		
+ 		  ## Map truthset onto ASV summary table based on exact and inexact matches to truth set
   		df <- align_df[,c(1,4,6,7)]
+
+  		
   		colnames(df) <- c("hapid", paste0("refid_",strains[p]), paste0("snv_dist_from_",strains[p]),paste0("indel_dist_from_",strains[p]))
   		asvdf <- merge(asvdf, df, by = "hapid", sort = FALSE)
   		asvdf$strain[(align_df[,6] == 0 & align_df[,7] == 0)] <- as.character(strains[p])
+  		
+  		print("DEBUG4 in postProc_dada2.R =====")
+  		
 	}
 	if (!is.null(args$snv_filter)) {
   		filter_file <- args$snv_filter

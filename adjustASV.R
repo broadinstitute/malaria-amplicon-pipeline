@@ -1,5 +1,8 @@
 #!/bin/r env
 
+# Script Created by Ruchit Panchal 
+# Updated by Jason T. Mohabir & Angela Early 
+
 library(seqinr)
 library(data.table)
 library(argparse)
@@ -9,14 +12,16 @@ library(doMC)
 
 parser <- ArgumentParser()
 parser$add_argument("-s", "--seqtab", 
-                    help="Path to input")
+                     help="Path to input")
 parser$add_argument("-ref", "--reference",
-                    help="Path to reference fasta sequences")
+                     help="Path to reference fasta sequences")
 parser$add_argument("-o", "--output",
-                    help="Path to output for corrected ASV list")
+                     help="Path to output for corrected ASV list")
 
 args <- parser$parse_args()
 path_to_refseq <- args$reference
+
+#path_to_refseq <- "pf3d7_ref_updated_v3.fasta"
 
 if (file.exists(path_to_refseq)) {
   ref <- toupper(sapply(read.fasta(path_to_refseq),c2s))
@@ -26,6 +31,7 @@ if (file.exists(path_to_refseq)) {
 
 if (!is.null(args$seqtab)) {
   seqfile <- args$seqtab
+  #seqfile <- "seqtab_nop.tsv"
   if (file.exists(seqfile)) {
     seqtab <- as.matrix(fread(seqfile), rownames=1)
   } else {
@@ -39,31 +45,101 @@ sigma <- nucleotideSubstitutionMatrix(match = 2, mismatch = -1, baseOnly = FALSE
 seqs <- as.character(colnames(seqtab))
 
 registerDoMC(detectCores())
-df <- foreach(i=1:length(seqs), .combine = "rbind") %dopar% {
-  map <- pairwiseAlignment(ref, seqs[i],substitutionMatrix = sigma, gapOpening = -8, gapExtension = -5, scoreOnly = TRUE)
+df <- foreach(i=1:length(seqs),.combine = "rbind") %dopar% {
+
+  # Figure out the amplicon of origin for the ASV 
+  map <- pairwiseAlignment(ref,seqs[i],substitutionMatrix = sigma, gapOpening = -8, gapExtension = -5, scoreOnly = TRUE)
   tar = ref[which.max(map)]
+  
+  # Split the ASVs at Ns 
   seq <- strsplit(seqs[i],"NNNNNNNNNN")[[1]]
+  
+  # Generate alignment of seq sequences to find the overlap (overlap < 12bp)
   aln <- pairwiseAlignment(seq[1:2], tar, substitutionMatrix = sigma, gapOpening = -8, gapExtension = -5, scoreOnly = FALSE, type = 'overlap')
+  
+  # Generate the overlap sequences 
   con <- compareStrings(consensusString(aln[1]),consensusString(aln[2]))
-  overlap <- unlist(gregexpr("[[:alpha:]]",con))
+  overlap <- unlist(gregexpr("[[:alpha:]]",con)) # Check the question 
+  
+  # Check if the ASVs overlap (merge)
   if (overlap == -1) {
-    N = (nchar(seq[1])+nchar(seq[2])) - nchar(tar)
-    stkN <- paste0(rep('N',abs(N)),collapse = '')
+    
+    # Concatenation 
+    N = abs((nchar(seq[1])+nchar(seq[2])) - nchar(tar))
+    stkN <- paste0(rep('N',N),collapse = '')
     correctedASV <- paste0(seq[1],stkN,seq[2])
-  } else {
+    status_flag <- 'concatenated'
+    
+  } 
+  else {
+    
+    # Merging  
     N = length(overlap)
     correctedASV <- paste0(seq[1],substr(seq[2],(N+1),nchar(seq[2])))
+    status_flag <- 'merged'
+    
   }
-  if (nchar(correctedASV) != nchar(tar)) {
-    N = NA
-    correctedASV = NA
+  
+  # Check correctedASV is the correct length 
+  #if (nchar(correctedASV) != nchar(tar)) {
+  #  # Concatenating 
+  #  N = NA
+  #  correctedASV = NA
+  #}
+  
+  # Check if alignment contains unexpected characters such as '?' 
+  if (grepl("\\?",con)) {
+    correctedASV <- NA
+    status_flag <- 'overlapMismatch'
   }
-  data.frame(target = names(tar),
-             ASV = seqs[i],
+  
+  data.frame(ix = i, 
+             target = names(tar),
+             uncorrectedASV = seqs[i],
              correctedASV = correctedASV,
-             overlap = N)
+             overlap = length(overlap),
+             correctASVLength = nchar(correctedASV),
+             targetLength = nchar(tar),
+             correctASVLength_match_targetLength = nchar(correctedASV) == nchar(tar),
+             statusFlag = status_flag,
+             consensusCompare = con)
 }
+
 write.table(df, file = args$output, sep = "\t", quote = FALSE, row.names = FALSE)
+
 seqfile_corrected <- paste0(dirname(seqfile),"/seqtab_corrected.tsv")
-colnames(seqtab) <- as.character(df$correctedASV)
-write.table(seqtab, file = seqfile_corrected, sep = "\t", quote = FALSE, row.names = FALSE)
+
+# NOTE: Duplicated ASVs do not have read support merged 
+
+correctedASV_vec <- as.character(df$correctedASV)
+colnames(seqtab) <- correctedASV_vec
+
+duplicated_sequences <- correctedASV_vec[duplicated(correctedASV_vec)]
+
+for (seq in duplicated_sequences){
+  
+  # Boolean vector of matching columns in seqtab
+  # correctedASV_vec == seq 
+  
+  # Generated summed column
+  summedColumn <- rowSums(seqtab[,correctedASV_vec == seq])
+  
+  # Remove duplicated columns 
+  temp_seqtab <- data.frame(seqtab[,!(correctedASV_vec == seq)])
+  
+  # Add column back to table
+  temp_seqtab[,seq] <- summedColumn
+  filt_seqtab <- temp_seqtab
+  
+}
+
+filt_seqtab <- seqtab[,!is.na(colnames(seqtab))]
+
+# Should be redundant after looping 
+#filt_seqtab <- filt_seqtab[,!duplicated(colnames(filt_seqtab))]
+
+write.table(filt_seqtab, file = seqfile_corrected, sep = "\t", quote = FALSE, row.names = TRUE)
+
+save(list = ls(all.names = TRUE), file = "currentEnvironment_adjustASV.RData")
+
+

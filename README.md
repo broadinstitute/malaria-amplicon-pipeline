@@ -1,7 +1,9 @@
 # malaria-amplicon-pipeline
 Contact in case of issues running the tool:  
-Ruchit Panchal  
-rpanchal@broadinstitute.org
+
+Ruchit Panchal: rpanchal@broadinstitute.org
+
+Jason Travis Mohabir: jmohabir@broadinstitute.org
 
 ## Pre-Requisites
 ### Install Anaconda3
@@ -223,7 +225,8 @@ optional arguments:
   -m AMP_MASK, --amp_mask AMP_MASK
                     	Amplicon low complexity mask info (default: None, disabled)
   -v, --verbose     	Increase verbosity
-
-(C)2021 Broad Institute
 ```
+
+&copy; 2022 Broad Institute, Genomic Center for Infectious Diseases
+
 
