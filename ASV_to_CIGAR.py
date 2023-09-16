@@ -71,7 +71,7 @@ def parse_asv_table(file, min_reads=0, min_samples=0, max_snv_dist=-1, max_indel
             if exclude_bimeras and line[-1] == "TRUE":
                 continue # skip if dada2 called bimera
             ASV = line[0] # (e.g. ASV123)
-            amplicon = line[4] # target gene/amplicon
+            amplicon = line[5] # target gene/amplicon
             if amplicon not in bins:
                 bins[amplicon] = []
             bins[amplicon].append(ASV)
