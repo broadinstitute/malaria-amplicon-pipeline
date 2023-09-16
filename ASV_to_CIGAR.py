@@ -53,16 +53,16 @@ def parse_asv_table(file, min_reads=0, min_samples=0, max_snv_dist=-1, max_indel
         for line in f:
             line = line.strip().split("\t")
             # total reads
-            if int(line[1]) < min_reads: 
+            if int(line[2]) < min_reads: 
                 continue # skip if too few total reads
             # total samples
-            if int(line[2]) < min_samples: 
+            if int(line[3]) < min_samples: 
                 continue # skip if in too few samples
             # minimum SNV distance
-            if max_snv_dist >= 0 and int(line[5]) > max_snv_dist:
+            if max_snv_dist >= 0 and int(line[6]) > max_snv_dist:
                 continue # skip if snv distance > threshold
             # minimum indel distance
-            if max_indel_dist >= 0 and int(line[6]) > max_indel_dist:
+            if max_indel_dist >= 0 and int(line[7]) > max_indel_dist:
                 continue # skip if indel distance > threshold
             # check for failing the snv_filter and indel_filter
             if not include_failed and (line[-3] == "FAIL" or line[-2] == "FAIL"):
@@ -71,7 +71,7 @@ def parse_asv_table(file, min_reads=0, min_samples=0, max_snv_dist=-1, max_indel
             if exclude_bimeras and line[-1] == "TRUE":
                 continue # skip if dada2 called bimera
             ASV = line[0] # (e.g. ASV123)
-            amplicon = line[4] # target gene/amplicon
+            amplicon = line[5] # target gene/amplicon
             if amplicon not in bins:
                 bins[amplicon] = []
             bins[amplicon].append(ASV)
